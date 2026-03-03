@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace SomeFilmAPI;
+namespace SomeFilmAPI.Models.DB;
 
 public partial class SomeFilmContext : DbContext
 {
