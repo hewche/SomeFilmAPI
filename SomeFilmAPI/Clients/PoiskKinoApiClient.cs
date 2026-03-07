@@ -7,10 +7,12 @@ namespace SomeFilmAPI.Clients
     {
         private string _apiKey;
         private HttpClient _httpClient;
-        public PoiskKinoApiClient(HttpClient httpClient)
+        private ILogger<PoiskKinoApiClient> _logger;
+        public PoiskKinoApiClient(HttpClient httpClient, ILogger<PoiskKinoApiClient> logger)
         {
             _apiKey = "861C8MZ-NQHMRP3-HDGTG33-AB7QDKV";
             _httpClient = httpClient;
+            _logger = logger;
         }
 
         public async Task<MovieDto> GetMovieById(int id)
@@ -24,6 +26,7 @@ namespace SomeFilmAPI.Clients
                 if (response.IsSuccessStatusCode)
                 {
                     string json = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation(json);
                     return JsonSerializer.Deserialize<MovieDto>(json);
                 }
                 else

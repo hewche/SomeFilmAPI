@@ -17,11 +17,13 @@ namespace SomeFilmAPI.Controllers
     {
         private readonly SomeFilmContext _context;
         private PoiskKinoApiClient _pkApiClient;
+        private ILogger<MoviesController> _logger;
 
-        public MoviesController(SomeFilmContext context)
+        public MoviesController(SomeFilmContext context, PoiskKinoApiClient poiskKinoApiClient, ILogger<MoviesController> logger)
         {
             _context = context;
-            _pkApiClient = new PoiskKinoApiClient(new HttpClient());
+            _pkApiClient = poiskKinoApiClient;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -47,8 +49,8 @@ namespace SomeFilmAPI.Controllers
             if (movie == null)
             {
                 MovieDto movieDto = _pkApiClient.GetMovieById(id).Result;
+                _logger.LogInformation(movieDto.Title);
                 return Ok(DtoConverter.ToMovie(movieDto));
-
             }
 
             return Ok(movie);
