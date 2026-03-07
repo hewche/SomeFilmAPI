@@ -48,14 +48,48 @@ namespace SomeFilmAPI.Controllers
 
             if (movie == null)
             {
-                MovieDto movieDto = _pkApiClient.GetMovieById(id).Result;
-                _logger.LogInformation(movieDto.Title);
-                return Ok(DtoConverter.ToMovie(movieDto));
+                movie = await FetchAndSaveMovieAsync(id);
+                return Ok(movie);
             }
 
             return Ok(movie);
+        }
 
 
+        private async Task<Movie> FetchAndSaveMovieAsync(int id)
+        {
+            MovieDto movieDto = await _pkApiClient.GetMovieByIdAsync(id);
+            _logger.LogInformation(movieDto.Title);
+            return DtoConverter.ToMovie(movieDto);
+
+        }
+        private async Task EnsureRelatedEntityExistAsync(Movie movie)
+        {
+            //Movietype movietype = await _context.Movietypes.FindAsync(movie.MovieType);
+            if ((await _context.Movietypes.FindAsync(movie.MovieType) == null))
+            {
+                _context.Movietypes.Add(movie.MovieTypeNavigation);
+            }
+            if((await _context.Countries.FirstOrDefaultAsync(c=> c.Name ==  movie.Country.Name) == null))
+            {
+                _context.Countries.Add(movie.Country);
+            }
+            if((await _context.Ratingmpaas.FirstOrDefaultAsync(r => r.Title == movie.MpaaNavigation.Title) == null)){
+                _context.Ratingmpaas.Add(movie.MpaaNavigation);
+            }
+        }
+        private async Task ImportMovieFromApi(Movie movie)
+        {
+            try
+            {
+                await EnsureRelatedEntityExistAsync(movie);
+                _context.Movies.Add(movie);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Ошибка: "+ex.Message);
+            }
         }
 
     }

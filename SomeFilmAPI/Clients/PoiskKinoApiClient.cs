@@ -15,7 +15,7 @@ namespace SomeFilmAPI.Clients
             _logger = logger;
         }
 
-        public async Task<MovieDto> GetMovieById(int id)
+        public async Task<MovieDto> GetMovieByIdAsync(int id)
         {
             try
             {
