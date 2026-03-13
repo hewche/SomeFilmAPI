@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using SomeFilmAPI.Models.DB;
+using System.Text.Json.Serialization;
 
 namespace SomeFilmAPI.Models.API
 {
@@ -16,12 +17,18 @@ namespace SomeFilmAPI.Models.API
 
         public List<GenreResponseDto> Genres { get; set; }
         public List<CountryResponseDto> Countries { get; set; }
+        public List<AwardResponseDto> Awards { get; set; }
+        public List<RatingResponseDto> Ratings { get; set; } 
     }
     public class GenreResponseDto
     {
         public string? Name { get; set; }
     }
 
+    public class AwardResponseDto
+    {
+        public string? Title { get; set; }
+    }
     public class PosterResponseDto
     {
         public string? Url { get; set; }
@@ -33,4 +40,9 @@ namespace SomeFilmAPI.Models.API
         public string? Name { get; set; }
     }
 
+    public class RatingResponseDto
+    {
+        public string? Name { get; set; }
+        public decimal? Rating { get; set; }
+    }
 }

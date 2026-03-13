@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace SomeFilmAPI.Models.API
 {
@@ -38,10 +39,14 @@ namespace SomeFilmAPI.Models.API
         public List<GenreDto>? Genres { get; set; }
 
         [JsonPropertyName("rating")]
-        public Dictionary<string, double>? Rating { get; set; }
+        public Dictionary<string, decimal>? Rating { get; set; }
 
         [JsonPropertyName("persons")]
         public List<PersonDto>? Persons { get; set; }
+
+        [JsonPropertyName("awards")]
+        public List<AwardDto> Awards { get; set; }
+
     }
 
     public class GenreDto
@@ -58,10 +63,34 @@ namespace SomeFilmAPI.Models.API
         public string? PreviewUrl { get; set; }
 
     }
+
     public class CountryDto
     {
         [JsonPropertyName("name")]
         public string? Name { get; set; }
     }
+
+    public class AwardDto
+    {
+        [JsonPropertyName("nomination")]
+        public NominationDto? Nomination { get; set; }
+
+        [JsonPropertyName("winning")]
+        public bool IsWinning { get; set; }
+        public bool ShouldSerializeNomination()
+        {
+            return IsWinning;
+        }
+    }
+
+    public class NominationDto
+    {
+        [JsonPropertyName("title")]
+        public string? Title { get; set; }
+        [JsonPropertyName("year")]
+        public int? year { get; set; }
+    }
+
+
 
 }

@@ -39,7 +39,7 @@ public partial class SomeFilmContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost;Port=5050;Database=SomeFilm;Username=postgres;Password=123");
+        => optionsBuilder.UseNpgsql("Host=localhost; Port=5050; Database=SomeFilm; Username=postgres; Password=123");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -86,7 +86,6 @@ public partial class SomeFilmContext : DbContext
             entity.ToTable("movie");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CountryId).HasColumnName("country_id");
             entity.Property(e => e.DateMovie).HasColumnName("date_movie");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.MovieType).HasColumnName("movie_type");
@@ -100,11 +99,6 @@ public partial class SomeFilmContext : DbContext
             entity.Property(e => e.Title)
                 .HasMaxLength(120)
                 .HasColumnName("title");
-
-            entity.HasOne(d => d.Country).WithMany(p => p.Movies)
-                .HasForeignKey(d => d.CountryId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("movie_country_id_fkey");
 
             entity.HasOne(d => d.MovieTypeNavigation).WithMany(p => p.Movies)
                 .HasForeignKey(d => d.MovieType)
@@ -133,6 +127,25 @@ public partial class SomeFilmContext : DbContext
                         j.ToTable("movieaward");
                         j.IndexerProperty<int>("MovieId").HasColumnName("movie_id");
                         j.IndexerProperty<int>("AwardId").HasColumnName("award_id");
+                    });
+
+            entity.HasMany(d => d.Countries).WithMany(p => p.Movies)
+                .UsingEntity<Dictionary<string, object>>(
+                    "Moviecountry",
+                    r => r.HasOne<Country>().WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("moviecountries_country_id_fkey"),
+                    l => l.HasOne<Movie>().WithMany()
+                        .HasForeignKey("MovieId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("moviecountries_movie_id_fkey"),
+                    j =>
+                    {
+                        j.HasKey("MovieId", "CountryId").HasName("moviecountries_pkey");
+                        j.ToTable("moviecountries");
+                        j.IndexerProperty<int>("MovieId").HasColumnName("movie_id");
+                        j.IndexerProperty<int>("CountryId").HasColumnName("country_id");
                     });
 
             entity.HasMany(d => d.Genres).WithMany(p => p.Movies)

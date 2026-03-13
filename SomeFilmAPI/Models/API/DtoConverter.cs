@@ -13,12 +13,15 @@ namespace SomeFilmAPI.Models.API
                 Title = movieDto.Title,
                 MovieType = movieDto.MovieType,
                 MovieTypeNavigation = new Movietype() { Id = movieDto.MovieType, Title = movieDto.MovieTypeName },
+                MpaaNavigation = new Ratingmpaa() { Title = movieDto.Title },
                 DateMovie = DateOnly.Parse($"01.01.{movieDto.DateMovie}"),
                 Description = movieDto.Description,
                 Slogan = movieDto.Slogan,
                 Poster = movieDto.Poster.Url,
-                Country = new Country() { Name = movieDto.Countries[0].Name },
-                MpaaNavigation= new Ratingmpaa() { Title=movieDto.Mpaa}
+                Countries = ToCountries(movieDto.Countries),
+                Genres = ToGenres(movieDto.Genres),
+                Awards = ToAwards(movieDto.Awards),
+                Movieratings = ToMovieratings(movieDto.Rating),
             };
         }
 
@@ -29,21 +32,52 @@ namespace SomeFilmAPI.Models.API
                 Id = movie.Id,
                 Title = movie.Title,
                 MovieTypeName = movie.MovieTypeNavigation.Title,
+                MpaaRating =  movie.MpaaNavigation.Title,
                 DateMovie = movie.DateMovie.Year,
                 Description = movie.Description,
                 Slogan = movie.Slogan,
                 Poster = movie.Poster,
-                Countries = new List<CountryResponseDto>() { new CountryResponseDto() {Name= movie.Country.Name } },
-                Genres = new List<GenreResponseDto>() { new GenreResponseDto() { Name = movie.Country.Name } }
+                Countries = ToCountriesResponseDto(movie.Countries.ToList()),
+                Genres = ToGenresResponseDto(movie.Genres.ToList()),
+                Awards = ToAwardsResponseDto(movie.Awards.ToList()),
+                Ratings = ToMovieratingsResponseDto(movie.Movieratings.ToList()),
             };
         }
-        private static List<CountryResponseDto> ToCountryResponseDto(List<Country> countriesDto)
+        private static List<CountryResponseDto> ToCountriesResponseDto(List<Country> countries)
         {
-            return (List<CountryResponseDto>)countriesDto.Select(c => new CountryResponseDto() { Name = c.Name});
+            return countries.Select(c => new CountryResponseDto() { Name = c.Name}).ToList();
         }
-        private static List<GenreResponseDto> ToGenreResponseDto(List<Genre> genresDto)
+        private static List<GenreResponseDto> ToGenresResponseDto(List<Genre> genres)
         {
-            return (List<GenreResponseDto>)genresDto.Select(g => new GenreResponseDto() { Name = g.Title});
+            return genres.Select(g => new GenreResponseDto() { Name = g.Title}).ToList();
+        }
+
+        private static List<AwardResponseDto> ToAwardsResponseDto(List<Award> awards)
+        {
+            return awards.Select(a => new AwardResponseDto() { Title = a.Title}).ToList();
+        }
+        private static List<RatingResponseDto> ToMovieratingsResponseDto(List<Movierating> ratings)
+        {
+            return ratings.Select(r => new RatingResponseDto() { Name= r.RatingNavigation.Title, Rating = r.Rating}).ToList();
+        }
+
+        private static List<Country> ToCountries(List<CountryDto> countriesDto)
+        {
+
+            return countriesDto.Select(c => new Country() { Name = c.Name }).ToList();
+        }
+        private static List<Genre> ToGenres(List<GenreDto> countriesDto)
+        {
+            return countriesDto.Select(c => new Genre() { Title = c.Name }).ToList();
+        }
+        private static List<Award> ToAwards(List<AwardDto> awardsDto)
+        {
+            return awardsDto.Where(c => c.IsWinning).Select(c => new Award() { Title = c.Nomination.Title }).ToList();
+        }
+
+        private static List<Movierating> ToMovieratings(Dictionary<string, decimal> ratings)
+        {
+            return ratings.Select(r=> new Movierating() { RatingNavigation = new Rating() { Title = r.Key}, Rating=r.Value }).ToList();
         }
     }
 }

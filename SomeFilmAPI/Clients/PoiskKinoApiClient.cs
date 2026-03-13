@@ -19,7 +19,7 @@ namespace SomeFilmAPI.Clients
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.poiskkino.dev/v1.4/movie/{id}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.poiskkino.dev/v1.4/movie/id={id}");
                 request.Headers.TryAddWithoutValidation("X-API-KEY", _apiKey);
 
                 var response = await _httpClient.SendAsync(request);

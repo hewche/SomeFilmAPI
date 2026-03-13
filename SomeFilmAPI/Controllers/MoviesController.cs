@@ -30,7 +30,6 @@ namespace SomeFilmAPI.Controllers
         public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
         {
             var movies = await _context.Movies
-                .Include(m => m.Country)
                 .Include(m => m.MovieTypeNavigation)
                 .Include(m => m.MpaaNavigation)
                 .ToListAsync();
@@ -38,9 +37,8 @@ namespace SomeFilmAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<MovieResponseDto>> GetMovie(int id)
+        public async Task<ActionResult<Movie>> GetMovie(int id)
         {
-            //var movie = new Movie() { Id = 12 };
             var movie = await LoadMovieFromDbByIdAsync(id);
             if (movie == null)
             {
@@ -55,7 +53,6 @@ namespace SomeFilmAPI.Controllers
         {
 
             var movie = await _context.Movies
-                .Include(m => m.Country)
                 .Include(m => m.MovieTypeNavigation)
                 .Include(m => m.MpaaNavigation)
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -79,40 +76,40 @@ namespace SomeFilmAPI.Controllers
             return DtoConverter.ToMovieResponseDto(movie);
 
         }
-        private async Task EnsureRelatedEntityExistAsync(Movie movie)
-        {
-            Movietype movietype = await _context.Movietypes.FirstOrDefaultAsync(t => t.Title == movie.MovieTypeNavigation.Title);
-            if (movietype == null)
-            {
-                _context.Movietypes.Add(movie.MovieTypeNavigation);
-            }
-            else
-            {
-                movie.MovieTypeNavigation = movietype;
-            }
-            Country country = await _context.Countries.FirstOrDefaultAsync(c => c.Name == movie.Country.Name);
-            if(country == null)
-            {
-                _context.Countries.Add(movie.Country);
-            }
-            else
-            {
-                movie.Country = country;
-            }
-            Ratingmpaa ratingmpaa = await _context.Ratingmpaas.FirstOrDefaultAsync(r => r.Title == movie.MpaaNavigation.Title);
-            if (ratingmpaa == null){
-                _context.Ratingmpaas.Add(movie.MpaaNavigation);
-            }
-            else
-            {
-                movie.MpaaNavigation = ratingmpaa;
-            }
-        }
+        //private async Task EnsureRelatedEntityExistAsync(Movie movie)
+        //{
+        //    Movietype movietype = await _context.Movietypes.FirstOrDefaultAsync(t => t.Title == movie.MovieTypeNavigation.Title);
+        //    if (movietype == null)
+        //    {
+        //        _context.Movietypes.Add(movie.MovieTypeNavigation);
+        //    }
+        //    else
+        //    {
+        //        movie.MovieTypeNavigation = movietype;
+        //    }
+        //    Country country = await _context.Countries.FirstOrDefaultAsync(c => c.Name == movie.Country.Name);
+        //    if(country == null)
+        //    {
+        //        _context.Countries.Add(movie.Country);
+        //    }
+        //    else
+        //    {
+        //        movie.Country = country;
+        //    }
+        //    Ratingmpaa ratingmpaa = await _context.Ratingmpaas.FirstOrDefaultAsync(r => r.Title == movie.MpaaNavigation.Title);
+        //    if (ratingmpaa == null){
+        //        _context.Ratingmpaas.Add(movie.MpaaNavigation);
+        //    }
+        //    else
+        //    {
+        //        movie.MpaaNavigation = ratingmpaa;
+        //    }
+        //}
         private async Task ImportMovieFromApi(Movie movie)
         {
             try
             {
-                await EnsureRelatedEntityExistAsync(movie);
+                //await EnsureRelatedEntityExistAsync(movie);
                 _context.Movies.Add(movie);
                 await _context.SaveChangesAsync();
             }

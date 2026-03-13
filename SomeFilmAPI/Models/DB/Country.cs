@@ -9,7 +9,7 @@ public partial class Country
 
     public string Name { get; set; } = null!;
 
-    public virtual ICollection<Movie> Movies { get; set; } = new List<Movie>();
-
     public virtual ICollection<Person> People { get; set; } = new List<Person>();
+
+    public virtual ICollection<Movie> Movies { get; set; } = new List<Movie>();
 }
