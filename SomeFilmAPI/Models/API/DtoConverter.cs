@@ -12,16 +12,16 @@ namespace SomeFilmAPI.Models.API
                 Id = movieDto.Id,
                 Title = movieDto.Title,
                 MovieType = movieDto.MovieType,
-                MovieTypeNavigation = new Movietype() { Id = movieDto.MovieType, Title = movieDto.MovieTypeName },
-                MpaaNavigation = new Ratingmpaa() { Title = movieDto.Title },
+                MovieTypeNavigation = new Movietype() { Title = movieDto.MovieTypeName },
+                MpaaNavigation = new Ratingmpaa() { Title = movieDto.Mpaa ?? "unkown"},
                 DateMovie = DateOnly.Parse($"01.01.{movieDto.DateMovie}"),
                 Description = movieDto.Description,
-                Slogan = movieDto.Slogan,
+                Slogan = movieDto.Slogan ?? "unkown",
                 Poster = movieDto.Poster.Url,
                 Countries = ToCountries(movieDto.Countries),
                 Genres = ToGenres(movieDto.Genres),
                 Awards = ToAwards(movieDto.Awards),
-                Movieratings = ToMovieratings(movieDto.Rating),
+                Movieratings = ToMovieratings(movieDto.Rating, movieDto.Id),
             };
         }
 
@@ -75,9 +75,9 @@ namespace SomeFilmAPI.Models.API
             return awardsDto.Where(c => c.IsWinning).Select(c => new Award() { Title = c.Nomination.Title }).ToList();
         }
 
-        private static List<Movierating> ToMovieratings(Dictionary<string, decimal> ratings)
+        private static List<Movierating> ToMovieratings(Dictionary<string, decimal> ratings, int Id)
         {
-            return ratings.Select(r=> new Movierating() { RatingNavigation = new Rating() { Title = r.Key}, Rating=r.Value }).ToList();
+            return ratings.Select(r=> new Movierating() { RatingNavigation = new Rating() { Title = r.Key}, Rating=r.Value, MovieId=Id }).ToList();
         }
     }
 }

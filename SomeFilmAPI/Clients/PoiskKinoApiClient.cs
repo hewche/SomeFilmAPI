@@ -19,7 +19,7 @@ namespace SomeFilmAPI.Clients
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.poiskkino.dev/v1.4/movie/id={id}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.poiskkino.dev/v1.4/movie/{id}");
                 request.Headers.TryAddWithoutValidation("X-API-KEY", _apiKey);
 
                 var response = await _httpClient.SendAsync(request);
@@ -36,7 +36,7 @@ namespace SomeFilmAPI.Clients
             }
             catch (Exception ex)
             {
-                
+                _logger.LogError(ex.Message);
                 return null;
             }
         }

@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SomeFilmAPI.Clients;
 using SomeFilmAPI.Models.API;
 using SomeFilmAPI.Models.DB;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.Metrics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SomeFilmAPI.Controllers
 {
@@ -45,11 +46,12 @@ namespace SomeFilmAPI.Controllers
                 movie = await FetchAndSaveMovieAsync(id);
             }
 
-            return Ok(movie);
+
+            return Ok(DtoConverter.ToMovieResponseDto(movie));
         }
 
 
-        private async Task<MovieResponseDto> LoadMovieFromDbByIdAsync(int id)
+        private async Task<Movie> LoadMovieFromDbByIdAsync(int id)
         {
 
             var movie = await _context.Movies
@@ -59,11 +61,13 @@ namespace SomeFilmAPI.Controllers
                 .Include(m=>m.Genres)
                 .Include(m=>m.Awards)
                 .Include(m=>m.Movieratings)
+                .Include(m=>m.Movieratings)
+                .ThenInclude(r=>r.RatingNavigation)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            return DtoConverter.ToMovieResponseDto(movie);
+            return movie;
         }
 
-        private async Task<MovieResponseDto> FetchAndSaveMovieAsync(int id)
+        private async Task<Movie> FetchAndSaveMovieAsync(int id)
         {
             MovieDto movieDto = await _pkApiClient.GetMovieByIdAsync(id);
             _logger.LogInformation("=== ДИАГНОСТИКА API ===");
@@ -77,43 +81,168 @@ namespace SomeFilmAPI.Controllers
             var movie = DtoConverter.ToMovie(movieDto);
             _logger.LogInformation(movie.Title);
             await ImportMovieFromApi(movie);
-            return DtoConverter.ToMovieResponseDto(movie);
+            return movie;
 
         }
-        //private async Task EnsureRelatedEntityExistAsync(Movie movie)
-        //{
-        //    Movietype movietype = await _context.Movietypes.FirstOrDefaultAsync(t => t.Title == movie.MovieTypeNavigation.Title);
-        //    if (movietype == null)
-        //    {
-        //        _context.Movietypes.Add(movie.MovieTypeNavigation);
-        //    }
-        //    else
-        //    {
-        //        movie.MovieTypeNavigation = movietype;
-        //    }
-        //    Country country = await _context.Countries.FirstOrDefaultAsync(c => c.Name == movie.Country.Name);
-        //    if(country == null)
-        //    {
-        //        _context.Countries.Add(movie.Country);
-        //    }
-        //    else
-        //    {
-        //        movie.Country = country;
-        //    }
-        //    Ratingmpaa ratingmpaa = await _context.Ratingmpaas.FirstOrDefaultAsync(r => r.Title == movie.MpaaNavigation.Title);
-        //    if (ratingmpaa == null){
-        //        _context.Ratingmpaas.Add(movie.MpaaNavigation);
-        //    }
-        //    else
-        //    {
-        //        movie.MpaaNavigation = ratingmpaa;
-        //    }
-        //}
+        private async Task EnsureRelatedEntityExistAsync(Movie movie)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                movie.MovieTypeNavigation = await FindOrCreateMovieTypeAsync(movie.MovieTypeNavigation);
+                movie.MpaaNavigation = await FindOrCreateMovieMpaaAsync(movie.MpaaNavigation);
+
+                await _context.SaveChangesAsync();
+
+                movie.Countries = await FindOrCreateCountriesAsync(movie.Countries.ToList());
+
+                movie.Genres = await FindOrCreateGenresAsync(movie.Genres.ToList());
+
+                movie.Awards = await FindOrCreateAwardsAsync(movie.Awards.ToList());
+
+                await _context.SaveChangesAsync();
+
+                movie.Movieratings = await FindOrCreateRatingsAsync(movie.Movieratings.ToList());
+
+                _context.Movies.Add(movie);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"{ex.Message}");
+                transaction.Rollback();
+            }
+        }
+
+        private async Task<Movietype> FindOrCreateMovieTypeAsync (Movietype movieType)
+        {
+            var existing = await _context.Movietypes.FindAsync(movieType);
+            if (existing != null)
+            {
+                return existing;
+            }
+            _context.Movietypes.Add(movieType);
+            return movieType;
+        }
+
+        private async Task<Ratingmpaa> FindOrCreateMovieMpaaAsync(Ratingmpaa ratingmpaa)
+        {
+            var existing = await _context.Ratingmpaas.FindAsync(ratingmpaa);
+            if (existing != null) return existing;
+
+            _context.Ratingmpaas.Add(ratingmpaa);
+            return ratingmpaa;
+        }
+
+        private async Task<List<Country>> FindOrCreateCountriesAsync(List<Country> countries)
+        {
+            List<Country> newCountries = new List<Country>();
+            List<Country> result = new List<Country>();
+            foreach (Country country in countries)
+            {
+                var existing = await _context.Countries.FirstOrDefaultAsync(c => c.Name == country.Name);
+                if (existing == null)
+                {
+                    newCountries.Add(country);
+                }
+                else
+                {
+                    result.Add(existing);
+                }
+
+
+            }
+            if (newCountries.Any())
+            {
+                _context.Countries.AddRange(newCountries);
+                result.AddRange(newCountries);
+            }
+            return result;
+        }
+
+        private async Task<List<Genre>> FindOrCreateGenresAsync(List<Genre> genres)
+        {
+            List<Genre> newGenres = new List<Genre>();
+            List<Genre> result = new List<Genre>();
+            foreach (Genre genre in genres)
+            {
+                var existing = await _context.Genres.FirstOrDefaultAsync(g=> g.Title == genre.Title);
+                if (existing == null)
+                {
+                    newGenres.Add(genre);
+                }
+                else
+                {
+                    result.Add(existing);
+                }
+
+
+            }
+            if (newGenres.Any())
+            {
+                _context.Genres.AddRange(newGenres);
+                result.AddRange(result);
+            }
+            return result;
+        }
+
+        private async Task<List<Award>> FindOrCreateAwardsAsync(List<Award> awards)
+        {
+            List<Award> newAwards = new List<Award>();
+            List<Award> result = new List<Award>();
+            foreach (Award award in awards)
+            {
+                var existing = await _context.Awards.FirstOrDefaultAsync(a=> a.Title == award.Title);
+                if (existing == null)
+                {
+                    newAwards.Add(award);
+                }
+                else
+                {
+                    result.Add(existing);
+                }
+
+
+            }
+            if (newAwards.Any())
+            {
+                _context.Awards.AddRange(awards);
+                result.AddRange(result);
+            }
+            return result;
+        }
+
+        private async Task<List<Movierating>> FindOrCreateRatingsAsync(List<Movierating> ratings)
+        {
+            List<Movierating> result = new List<Movierating>();
+            foreach (Movierating rating in ratings)
+            {
+                Rating ratingType = await FindOrCreateRatingType(rating.RatingNavigation);
+                result.Add(new Movierating() { RatingId=ratingType.Id, Rating = rating.Rating, MovieId = rating.MovieId, RatingNavigation = ratingType});
+            }
+            return result;
+        }
+
+        private async Task<Rating> FindOrCreateRatingType(Rating rating)
+        {
+            var existing = await _context.Ratings.FirstOrDefaultAsync(r => r.Title == rating.Title);
+            if(existing == null)
+            {
+                _context.Ratings.Add(rating);
+                return rating;
+            }
+            else
+            {
+                return existing;
+            }
+        }
+
         private async Task ImportMovieFromApi(Movie movie)
         {
             try
             {
-                //await EnsureRelatedEntityExistAsync(movie);
+                await EnsureRelatedEntityExistAsync(movie);
                 _context.Movies.Add(movie);
                 await _context.SaveChangesAsync();
             }
