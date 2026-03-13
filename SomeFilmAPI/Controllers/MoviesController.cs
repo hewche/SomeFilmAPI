@@ -55,6 +55,10 @@ namespace SomeFilmAPI.Controllers
             var movie = await _context.Movies
                 .Include(m => m.MovieTypeNavigation)
                 .Include(m => m.MpaaNavigation)
+                .Include(m=>m.Countries)
+                .Include(m=>m.Genres)
+                .Include(m=>m.Awards)
+                .Include(m=>m.Movieratings)
                 .FirstOrDefaultAsync(m => m.Id == id);
             return DtoConverter.ToMovieResponseDto(movie);
         }

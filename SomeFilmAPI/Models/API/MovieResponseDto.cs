@@ -7,7 +7,6 @@ namespace SomeFilmAPI.Models.API
     {
         public int Id { get; set; }
         public string Title { get; set; }
-        public string CountryName { get; set; }
         public string MovieTypeName { get; set; }
         public string MpaaRating { get; set; }
         public string? Description { get; set; }
