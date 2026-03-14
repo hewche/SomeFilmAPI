@@ -26,7 +26,7 @@ namespace SomeFilmAPI.Clients
                 if (response.IsSuccessStatusCode)
                 {
                     string json = await response.Content.ReadAsStringAsync();
-                    _logger.LogInformation(json);
+                    _logger.LogInformation($"Ответ запроса получен");
                     return JsonSerializer.Deserialize<MovieDto>(json);
                 }
                 else
@@ -37,7 +37,33 @@ namespace SomeFilmAPI.Clients
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                return null;
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<MovieDto> GetMovieByNameAsync(string name)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.poiskkino.dev/v1.4/movie/search?query={name}");
+                request.Headers.TryAddWithoutValidation("X-API-KEY", _apiKey);
+
+                var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation($"Ответ запроса получен");
+                    return JsonSerializer.Deserialize<MovieSearchDto>(json).movies[0];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw new Exception(ex.Message);
             }
         }
     }

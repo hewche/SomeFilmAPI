@@ -16,7 +16,7 @@ namespace SomeFilmAPI.Models.API
 
         public List<GenreResponseDto> Genres { get; set; }
         public List<CountryResponseDto> Countries { get; set; }
-        public List<AwardResponseDto> Awards { get; set; }
+        public List<AwardResponseDto>? Awards { get; set; }
         public List<RatingResponseDto> Ratings { get; set; } 
     }
     public class GenreResponseDto

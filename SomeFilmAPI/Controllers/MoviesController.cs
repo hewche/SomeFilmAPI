@@ -38,7 +38,7 @@ namespace SomeFilmAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Movie>> GetMovie(int id)
+        public async Task<ActionResult<Movie>> GetMovieById(int id)
         {
             var movie = await LoadMovieFromDbByIdAsync(id);
             if (movie == null)
@@ -47,6 +47,17 @@ namespace SomeFilmAPI.Controllers
             }
 
 
+            return Ok(DtoConverter.ToMovieResponseDto(movie));
+        }
+
+        [HttpGet("search/{name}")]
+        public async Task<ActionResult<Movie>> GetMovieByName(string name)
+        {
+            var movie = await LoadMovieFromDbByNameAsync(name);
+            if (movie == null)
+            {
+                movie = await FetchAndSaveMovieAsync(name);
+            }
             return Ok(DtoConverter.ToMovieResponseDto(movie));
         }
 
@@ -67,20 +78,44 @@ namespace SomeFilmAPI.Controllers
             return movie;
         }
 
+        private async Task<Movie> LoadMovieFromDbByNameAsync(string name)
+        {
+
+            var movie = await _context.Movies
+                .Include(m => m.MovieTypeNavigation)
+                .Include(m => m.MpaaNavigation)
+                .Include(m => m.Countries)
+                .Include(m => m.Genres)
+                .Include(m => m.Awards)
+                .Include(m => m.Movieratings)
+                .Include(m => m.Movieratings)
+                .ThenInclude(r => r.RatingNavigation)
+                .FirstOrDefaultAsync(m => m.Title == name);
+            return movie;
+        }
+
         private async Task<Movie> FetchAndSaveMovieAsync(int id)
         {
             MovieDto movieDto = await _pkApiClient.GetMovieByIdAsync(id);
-            _logger.LogInformation("=== ДИАГНОСТИКА API ===");
-            _logger.LogInformation("ID: {Id}", movieDto?.Id);
-            _logger.LogInformation("Title: {Title}", movieDto?.Title);
-            _logger.LogInformation("MovieType: {MovieType}", movieDto?.MovieType);
-            _logger.LogInformation("MovieTypeName: {MovieTypeName}", movieDto?.MovieTypeName);
-            _logger.LogInformation("Countries count: {Count}", movieDto?.Countries?.Count ?? 0);
 
-            _logger.LogInformation(movieDto.Title);
             var movie = DtoConverter.ToMovie(movieDto);
-            _logger.LogInformation(movie.Title);
+
             await ImportMovieFromApi(movie);
+
+            _logger.LogInformation($"{movie.Title} - сохранен");
+            return movie;
+
+        }
+
+        private async Task<Movie> FetchAndSaveMovieAsync(string name)
+        {
+            MovieDto movieDto = await _pkApiClient.GetMovieByNameAsync(name);
+
+            var movie = DtoConverter.ToMovie(movieDto);
+
+            await ImportMovieFromApi(movie);
+
+            _logger.LogInformation($"{movie.Title} - сохранен");
             return movie;
 
         }

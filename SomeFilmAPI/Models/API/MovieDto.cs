@@ -3,6 +3,13 @@ using System.Text.Json.Serialization;
 
 namespace SomeFilmAPI.Models.API
 {
+
+    public class MovieSearchDto
+    {
+        [JsonPropertyName("docs")]
+        public List<MovieDto> movies { get; set; }
+
+    }
     public class MovieDto
     {
         [JsonPropertyName("id")]

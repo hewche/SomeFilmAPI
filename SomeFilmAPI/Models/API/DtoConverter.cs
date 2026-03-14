@@ -17,7 +17,7 @@ namespace SomeFilmAPI.Models.API
                 DateMovie = DateOnly.Parse($"01.01.{movieDto.DateMovie}"),
                 Description = movieDto.Description,
                 Slogan = movieDto.Slogan ?? "unkown",
-                Poster = movieDto.Poster.Url,
+                Poster = movieDto.Poster.Url ?? "unkown",
                 Countries = ToCountries(movieDto.Countries),
                 Genres = ToGenres(movieDto.Genres),
                 Awards = ToAwards(movieDto.Awards),
@@ -39,7 +39,7 @@ namespace SomeFilmAPI.Models.API
                 Poster = movie.Poster,
                 Countries = ToCountriesResponseDto(movie.Countries.ToList()),
                 Genres = ToGenresResponseDto(movie.Genres.ToList()),
-                Awards = ToAwardsResponseDto(movie.Awards.ToList()),
+                Awards = movie.Awards != null? ToAwardsResponseDto(movie.Awards.ToList()): null,
                 Ratings = ToMovieratingsResponseDto(movie.Movieratings.ToList()),
             };
         }
@@ -72,7 +72,11 @@ namespace SomeFilmAPI.Models.API
         }
         private static List<Award> ToAwards(List<AwardDto> awardsDto)
         {
-            return awardsDto.Where(c => c.IsWinning).Select(c => new Award() { Title = c.Nomination.Title }).ToList();
+            if (awardsDto != null)
+            {
+                return awardsDto.Where(c => c.IsWinning).Select(c => new Award() { Title = c.Nomination.Title}).ToList();
+            }
+            return null;
         }
 
         private static List<Movierating> ToMovieratings(Dictionary<string, decimal> ratings, int Id)
